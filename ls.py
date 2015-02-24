@@ -2,6 +2,9 @@
 # encoding: utf-8
 import os
 import stat
+import pwd
+import grp
+import time
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -21,9 +24,15 @@ def ls():
     for filename in listdir:
         if args.list:
             filepath = os.path.join(path, filename)
-            mode = os.lstat(filepath).st_mode
+            file_stat = os.lstat(filepath)
+            mode = file_stat.st_mode
+            nlink = file_stat.st_nlink
+            username = pwd.getpwuid(file_stat.st_uid).pw_name
+            group = grp.getgrgid(file_stat.st_gid).gr_name
+            fsize = file_stat.st_size
             access = convertAccess(mode)
-            output += access + " " + filename + "\n"
+            ctime = time.strftime("%b %d %H:%M", time.localtime(file_stat.st_ctime))
+            output += "%s %d %s %s %d %s %s\n" % (access, nlink, username, group, fsize, ctime, filepath)
         else:
             output += filename + " "
     print output
