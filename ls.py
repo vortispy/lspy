@@ -10,7 +10,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("path", default=".", nargs="?")
 parser.add_argument("-a", "--all", action="store_true")
-parser.add_argument("-l", "--list", action="store_true")
+parser.add_argument("-l", "--long", action="store_true")
 args = parser.parse_args()
 
 def ls():
@@ -21,7 +21,7 @@ def ls():
         listdir = [f for f in os.listdir(path) if not f.startswith(".")]
     listdir.sort()
     output = ""
-    if args.list:
+    if args.long:
         output = longlist(path, listdir)
     else:
         output = defOutput(listdir)
