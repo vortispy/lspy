@@ -21,22 +21,35 @@ def ls():
         listdir = [f for f in os.listdir(path) if not f.startswith(".")]
     listdir.sort()
     output = ""
-    for filename in listdir:
-        if args.list:
-            filepath = os.path.join(filename)
-            file_stat = os.lstat(filepath)
-            mode = file_stat.st_mode
-            filepath += "/" if stat.S_ISDIR(mode) else ""
-            nlink = file_stat.st_nlink
-            username = pwd.getpwuid(file_stat.st_uid).pw_name
-            group = grp.getgrgid(file_stat.st_gid).gr_name
-            fsize = file_stat.st_size
-            access = convertAccess(mode)
-            ctime = time.strftime("%b %d %H:%M", time.localtime(file_stat.st_ctime))
-            output += "%s %d %s %s %d %s %s\n" % (access, nlink, username, group, fsize, ctime, filepath)
-        else:
-            output += filename + " "
+    if args.list:
+        output = longlist(path, listdir)
+    else:
+        output = defOutput(listdir)
     print output
+
+
+def defOutput(listdir):
+    output = ""
+    for filename in listdir:
+        output += filename + " "
+    return output
+
+def longlist(argPath, listdir):
+    output = ""
+    for filename in listdir:
+        filepath = os.path.join(argPath, filename)
+        file_stat = os.lstat(filepath)
+        mode = file_stat.st_mode
+        filename += "/" if stat.S_ISDIR(mode) else ""
+        nlink = file_stat.st_nlink
+        username = pwd.getpwuid(file_stat.st_uid).pw_name
+        group = grp.getgrgid(file_stat.st_gid).gr_name
+        fsize = file_stat.st_size
+        access = convertAccess(mode)
+        ctime = time.strftime("%b %d %H:%M", time.localtime(file_stat.st_ctime))
+        output += "%s %d %s %s %d %s %s\n" % (access, nlink, username, group, fsize, ctime, filename)
+
+    return output
 
 
 def convertAccess(mode):
