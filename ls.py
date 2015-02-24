@@ -1,66 +1,81 @@
 #!/usr/bin/env python
 # encoding: utf-8
 import os
+import stat
+import pwd
+import grp
+import time
 import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("path", default=".", nargs="?")
 parser.add_argument("-a", "--all", action="store_true")
-parser.add_argument("-l", "--list", action="store_true")
+parser.add_argument("-l", "--long", action="store_true")
 args = parser.parse_args()
 
 def ls():
     path = args.path
-    listdir = os.listdir(path)
+    if args.all:
+        listdir = os.listdir(path)
+    else:
+        listdir = [f for f in os.listdir(path) if not f.startswith(".")]
     listdir.sort()
+    output = ""
+    if args.long:
+        output = longlist(path, listdir)
+    else:
+        output = defOutput(listdir)
+    print output
+
+
+def defOutput(listdir):
+    output = ""
     for filename in listdir:
-        if args.all:
-            print filename,
-        elif not filename.startswith("."):
-            print filename,
-        elif args.list:
-            filepath = os.path.join(path, filename)
-            mode = os.stat(filepath).st_mode
-            access = convertAccess(mode)
-            print access + " " + filename
+        output += filename + " "
+    return output
+
+def longlist(argPath, listdir):
+    output = ""
+    for filename in listdir:
+        filepath = os.path.join(argPath, filename)
+        file_stat = os.lstat(filepath)
+        mode = file_stat.st_mode
+        filename += "/" if stat.S_ISDIR(mode) else ""
+        nlink = file_stat.st_nlink
+        username = pwd.getpwuid(file_stat.st_uid).pw_name
+        group = grp.getgrgid(file_stat.st_gid).gr_name
+        fsize = file_stat.st_size
+        access = convertAccess(mode)
+        ctime = time.strftime("%b %d %H:%M", time.localtime(file_stat.st_ctime))
+        output += "%s %d %s %s %d %s %s\n" % (access, nlink, username, group, fsize, ctime, filename)
+
+    return output
 
 
 def convertAccess(mode):
     access = ["-"] * 10
 
-    S_IFDIR = 004000
-
-    S_IRUSR = 00400
-    S_IWUSR = 00200
-    S_IXUSR = 00100
-    
-    S_IRGRP = 00040
-    S_IWGRP = 00020
-    S_IXGRP = 00010
-
-    S_IROTH = 00004
-    S_IWOTH = 00002
-    S_IXOTH = 00001
-
-    if S_IFDIR & mode:
+    if stat.S_ISDIR(mode):
         access[0] = "d"
-    if S_IRUSR & mode:
+    elif stat.S_ISLNK(mode):
+        access[0] = "l"
+    if stat.S_IRUSR & mode:
         access[1] = "r"
-    if S_IWUSR & mode:
+    if stat.S_IWUSR & mode:
         access[2] = "w"
-    if S_IXUSR & mode:
+    if stat.S_IXUSR & mode:
         access[3] = "x"
-    if S_IRGRP & mode:
+    if stat.S_IRGRP & mode:
         access[4] = "r"
-    if S_IWGRP & mode:
+    if stat.S_IWGRP & mode:
         access[5] = "w"
-    if S_IXGRP & mode:
+    if stat.S_IXGRP & mode:
         access[6] = "x"
-    if S_IROTH & mode:
+    if stat.S_IROTH & mode:
         access[7] = "r"
-    if S_IWOTH & mode:
+    if stat.S_IWOTH & mode:
         access[8] = "w"
-    if S_IXOTH & mode:
+    if stat.S_IXOTH & mode:
         access[9] = "x"
 
     return "".join(access)
