@@ -23,9 +23,10 @@ def ls():
     output = ""
     for filename in listdir:
         if args.list:
-            filepath = os.path.join(path, filename)
+            filepath = os.path.join(filename)
             file_stat = os.lstat(filepath)
             mode = file_stat.st_mode
+            filepath += "/" if stat.S_ISDIR(mode) else ""
             nlink = file_stat.st_nlink
             username = pwd.getpwuid(file_stat.st_uid).pw_name
             group = grp.getgrgid(file_stat.st_gid).gr_name
